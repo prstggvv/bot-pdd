@@ -1,22 +1,8 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const fs = require('fs');
-const markingsData = require('./utils/data/markings.json');
+const signsHandler = require('./handlers/signs');
 
-const botToken = process.env.BOT_TOKEN;
-const bot = new TelegramBot(botToken, { polling: true });
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
-const data = JSON.parse(fs.readFileSync('./utils/data/markings.json'));
-
-
-bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(chatId, 'Выберите раздел:', {
-    reply_markup: {
-      keyboard: [
-        ['🚦 Дорожные знаки'],
-        ['🛣 Разметка']
-      ],
-      resize_keyboard: true
-    }
-  });
-});
+bot.onText(/\/start/, (msg) => signsHandler(bot, msg));
+bot.on('message', (msg) => signsHandler(bot, msg));
