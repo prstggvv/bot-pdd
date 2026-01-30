@@ -1,17 +1,17 @@
 const fs = require('fs');
 
-function sendSign(bot, chatId, id, sign) {
+function sendItem(bot, chatId, id, item, icon) {
   bot.sendMessage(chatId, `
-🚦 *${id} — ${sign.title}*
+${icon} *${id} — ${item.title}*
 
-📄 ${sign.description}
-🛠 ${sign.usage}
-📏 ${sign.gost}
-  `, { parse_mode: 'Markdown' });
+📄 ${item.description}
+🛠 ${item.usage}
+📏 ${item.gost}
+`, { parse_mode: 'Markdown' });
 
-  sign.images.forEach(img =>
+  item.images?.forEach(img =>
     bot.sendPhoto(chatId, fs.createReadStream(img))
   );
 }
 
-module.exports = { sendSign };
+module.exports = { sendItem };

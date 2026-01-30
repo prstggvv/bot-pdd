@@ -5,10 +5,11 @@ module.exports = {
     ],
     resize_keyboard: true
   },
-  signsMenu: {
+
+  entityMenu: {
     keyboard: [
       ['🔢 По номеру', '🔍 По названию'],
-      ['📂 Паггинация', '⬅ Назад']
+      ['📂 Категории', '⬅ Назад']
     ],
     resize_keyboard: true,
     one_time_keyboard: true
