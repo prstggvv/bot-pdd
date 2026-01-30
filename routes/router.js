@@ -5,6 +5,9 @@ const { mainMenu, entityMenu } = require('../keyboards/mainKeyboard');
 const { searchByTitle } = require('../services/search');
 const { sendItem } = require('../services/formatter');
 const session = require('../state/session');
+const categories = require('../utils/categories');
+const { buildCategoryKeyboard } = require('../keyboards/categoryKeyboard');
+
 
 const ENTITIES = {
   signs: {
@@ -55,8 +58,21 @@ module.exports = (bot, msg) => {
       session.mode = 'NAME';
       return bot.sendMessage(chatId, 'Введите название или ключевое слово');
 
-    case '📂 Категории':
-      return bot.sendMessage(chatId, '📂 Категории будут добавлены позже');
+    case '📂 Категории': {
+      if (!session.entity) return;
+
+      session.mode = 'CATEGORY';
+      session.category = null;
+
+      return bot.sendMessage(
+        chatId,
+        'Выберите категорию:',
+        {
+          reply_markup: buildCategoryKeyboard(categories[session.entity])
+        }
+      );
+    }
+
 
     case '⬅ Назад':
       session.entity = null;
@@ -67,6 +83,34 @@ module.exports = (bot, msg) => {
   }
 
   if (!session.entity || !session.mode) return;
+
+  // выбор категории
+  if (session.mode === 'CATEGORY') {
+    const categoryKey = text.match(/\((.+?)\)$/)?.[1];
+    if (!categoryKey) return;
+
+    const { data, icon } = ENTITIES[session.entity];
+
+    const items = Object.entries(data).filter(
+      ([, item]) => item.category === categoryKey
+    );
+
+    if (!items.length) {
+      return bot.sendMessage(chatId, '❌ В этой категории ничего нет');
+    }
+
+    items.forEach(([id, item]) =>
+      sendItem(bot, chatId, id, item, icon)
+    );
+
+    session.mode = null;
+    session.category = null;
+
+    return bot.sendMessage(chatId, 'Что дальше?', {
+      reply_markup: entityMenu
+    });
+  }
+
 
   const { data, icon } = ENTITIES[session.entity];
 
@@ -100,6 +144,13 @@ module.exports = (bot, msg) => {
 
       return bot.sendMessage(chatId, 'Что дальше?', {
         reply_markup: entityMenu
+      });
+    }
+
+    case 'CATEGORY': {
+      session.mode = 'CATEGORY';
+      return bot.sendMessage(chatId, 'Выберите категорию:', {
+        reply_markup: buildCategoryKeyboard(categories[session.entity])
       });
     }
   }

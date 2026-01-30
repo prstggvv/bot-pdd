@@ -1,4 +1,5 @@
 module.exports = {
-  entity: null, // 'signs' | 'markings'
+  entity: null,
   mode: null,
+  category: null
 };
