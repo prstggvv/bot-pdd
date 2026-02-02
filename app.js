@@ -1,7 +1,11 @@
 require('dotenv').config();
-const TelegramBot = require('node-telegram-bot-api');
-const router = require('./routes/router');
+const { createBot } = require('./src/bot');
 
-const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+const token = process.env.BOT_TOKEN;
+if (!token) {
+  console.error('Ошибка: BOT_TOKEN не задан в .env');
+  process.exit(1);
+}
 
-bot.on('message', (msg) => router(bot, msg));
+createBot(token);
+console.log('Бот запущен.');
