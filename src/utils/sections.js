@@ -1,9 +1,30 @@
 const path = require('path');
 
 const SECTIONS = [
-  { id: 'signs', label: 'Знаки', emoji: '🚦', dataFile: 'signs' },
-  { id: 'markings', label: 'Разметка', emoji: '🛣', dataFile: 'markings' },
+  {
+    id: 'signs',
+    label: 'Знаки',
+    emoji: '🚦',
+    dataFile: 'signs',
+  },
+  {
+    id: 'markings',
+    label: 'Разметка',
+    emoji: '🛣',
+    dataFile: 'markings',
+  },
 ];
+
+const CATEGORY_LABELS = {
+  signs: {
+    warning: 'Предупреждающие',
+    priority: 'Приоритет',
+    prohibitory: 'Запрещающие',
+  },
+  markings: {
+    horizontal: 'Горизонтальная разметка',
+  },
+};
 
 function getSections() {
   return SECTIONS;
@@ -11,6 +32,13 @@ function getSections() {
 
 function getSectionById(sectionId) {
   return SECTIONS.find((s) => s.id === sectionId);
+}
+
+function getCategoryLabel(sectionId, categoryId) {
+  const bySection = CATEGORY_LABELS[sectionId];
+
+  if (bySection && bySection[categoryId]) return bySection[categoryId];
+  return categoryId;
 }
 
 function getDataDir() {
@@ -26,4 +54,5 @@ module.exports = {
   getSectionById,
   getDataDir,
   getDataPath,
+  getCategoryLabel,
 };

@@ -1,9 +1,8 @@
 const { getMainMenuKeyboard } = require('../bot/keyboards');
 
-const WELCOME =
-  'Добро пожаловать! Выберите раздел:\n\n' +
-  '🚦 **Знаки** — дорожные знаки\n' +
-  '🛣 **Разметка** — дорожная разметка';
+const WELCOME = 'Добро пожаловать! Выберите раздел:\n\n'
+  + '🚦 **Знаки** — дорожные знаки\n'
+  + '🛣 **Разметка** — дорожная разметка';
 
 function handleStart(msg, bot) {
   const chatId = msg.chat.id;
