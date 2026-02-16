@@ -9,22 +9,25 @@ function escapeMd(str) {
 }
 
 function formatItem(item) {
-  const id = escapeMd(item.id);
   const title = escapeMd(item.title);
   const desc = escapeMd(item.description);
-  const lines = [`📌 *${id}* — ${title}`, '', desc];
-
+  const placement = escapeMd(item.placement || '');
+  const lines = [`🚧 ${title}`, '', `📌 ${desc}`];
+  if (placement) {
+    lines.push('');
+    lines.push(`📍 ${placement}`);
+  }
   if (item.gost) {
     lines.push('');
-    lines.push(`ℹ ГОСТ/ПДД: ${escapeMd(item.gost)}`);
+    lines.push('ℹ ГОСТ/ПДД: ' + escapeMd(item.gost));
   }
   return lines.join('\n');
 }
 
 function formatSearchResults(items, sectionLabel) {
   const header = `Найдено в разделе «${sectionLabel}»: ${items.length}\n`;
-  const list = items.map((it) => `• *${escapeMd(it.id)}* — ${escapeMd(it.title)}`).join('\n');
-  return `${header}\n${list}`;
+  const list = items.map((it) => '• *' + escapeMd(it.id) + '* — ' + escapeMd(it.title)).join('\n');
+  return header + '\n' + list;
 }
 
 module.exports = {

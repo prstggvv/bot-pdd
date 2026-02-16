@@ -24,7 +24,7 @@ function sendSectionMenu(bot, chatId, sectionId) {
 }
 
 function handleCallback(query, bot) {
-  const { data } = query;
+  const data = query.data;
   const chatId = query.message.chat.id;
   const messageId = query.message.message_id;
 
@@ -64,9 +64,7 @@ function handleCallback(query, bot) {
       return;
     }
 
-    const {
-      items, page: p, totalPages, total,
-    } = getCategoryPage(sectionId, categoryId, page);
+    const { items, page: p, totalPages, total } = getCategoryPage(sectionId, categoryId, page);
     const label = getCategoryLabel(sectionId, categoryId);
     const text = `Категория «${label}» (${total} шт.). Страница ${p + 1}/${totalPages}. Выберите правило:`;
 
@@ -94,13 +92,20 @@ function handleCallback(query, bot) {
     const result = getItemByNumber(sectionId, itemId);
     bot.answerCallbackQuery(query.id);
     if (result.found) {
-      bot.sendMessage(chatId, formatItem(result.item), {
+      const item = result.item;
+      bot.sendMessage(chatId, formatItem(item), {
         parse_mode: 'Markdown',
         reply_markup: {
           keyboard: getSectionMenuKeyboard(sectionId),
           resize_keyboard: true,
         },
-      });
+      }).then(() => {
+        if (Array.isArray(item.image)) {
+          for (const img of item.image) {
+            bot.sendPhoto(chatId, img).catch(() => { });
+          }
+        }
+      }).catch(() => { });
     } else {
       bot.sendMessage(chatId, result.error || 'Не найдено.', {
         reply_markup: {
@@ -109,6 +114,7 @@ function handleCallback(query, bot) {
         },
       });
     }
+    return;
   }
 }
 

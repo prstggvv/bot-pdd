@@ -9,53 +9,72 @@ function normalizeNumber(input) {
   return input.trim().replace(/\s+/g, ' ');
 }
 
-function getItemByNumber(sectionId, number) {
+function toDocs(data) {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    const docs = [];
+    for (const [code, raw] of Object.entries(data)) {
+      docs.push({ code, ...raw });
+    }
+    return docs;
+  }
+  return [];
+}
+
+function getSectionDocs(sectionId) {
   const section = getSectionById(sectionId);
   if (!section) {
-    return { found: false, error: MSG_DATA_ERROR };
+    return { docs: [], error: MSG_DATA_ERROR };
   }
-  const data = loadSectionData(section.dataFile);
+  const raw = loadSectionData(section.dataFile);
+  const docs = toDocs(raw);
+  return { docs, error: null };
+}
+
+function getItemByNumber(sectionId, number) {
+  const { docs, error } = getSectionDocs(sectionId);
+  if (error) return { found: false, error };
   const normalized = normalizeNumber(number);
-  const key = normalized;
-  const raw = data[key];
-  if (!raw) {
+  const doc = docs.find((d) => normalizeNumber(d.code || '') === normalized);
+  if (!doc) {
     return { found: false, error: MSG_NO_RESULTS };
   }
   return {
     found: true,
     item: {
-      id: key,
-      title: raw.title || '',
-      description: raw.description || '',
-      category: raw.category || '',
-      image: Array.isArray(raw.image) ? raw.image : [],
-      gost: raw.gost,
+      id: doc.code,
+      title: doc.title || '',
+      description: doc.description || '',
+      category: doc.category || '',
+      image: Array.isArray(doc.image) ? doc.image : [],
+      gost: doc.gost,
+      placement: doc.placement || '',
     },
   };
 }
 
 function searchByName(sectionId, query) {
-  const section = getSectionById(sectionId);
-  if (!section) {
-    return { found: false, items: [], error: MSG_DATA_ERROR };
+  const { docs, error } = getSectionDocs(sectionId);
+  if (error) {
+    return { found: false, items: [], error };
   }
-  const data = loadSectionData(section.dataFile);
   const q = (query || '').trim().toLowerCase();
   if (!q) {
     return { found: false, items: [], error: 'Введите ключевое слово для поиска.' };
   }
   const items = [];
-  for (const [id, raw] of Object.entries(data)) {
-    const title = (raw.title || '').toLowerCase();
-    const desc = (raw.description || '').toLowerCase();
+  for (const doc of docs) {
+    const title = (doc.title || '').toLowerCase();
+    const desc = (doc.description || '').toLowerCase();
     if (title.includes(q) || desc.includes(q)) {
       items.push({
-        id,
-        title: raw.title || '',
-        description: raw.description || '',
-        category: raw.category || '',
-        image: Array.isArray(raw.image) ? raw.image : [],
-        gost: raw.gost,
+        id: doc.code,
+        title: doc.title || '',
+        description: doc.description || '',
+        category: doc.category || '',
+        image: Array.isArray(doc.image) ? doc.image : [],
+        gost: doc.gost,
+        placement: doc.placement || '',
       });
     }
   }
@@ -67,13 +86,12 @@ function searchByName(sectionId, query) {
 }
 
 function getCategories(sectionId) {
-  const section = getSectionById(sectionId);
-  if (!section) return [];
-  const data = loadSectionData(section.dataFile);
+  const { docs, error } = getSectionDocs(sectionId);
+  if (error) return [];
   const seen = new Set();
   const list = [];
-  for (const raw of Object.values(data)) {
-    const id = (raw && raw.category) || '';
+  for (const doc of docs) {
+    const id = doc.category || '';
     if (id && !seen.has(id)) {
       seen.add(id);
       list.push({ id, label: getCategoryLabel(sectionId, id) });
@@ -83,19 +101,19 @@ function getCategories(sectionId) {
 }
 
 function getItemsByCategory(sectionId, categoryId) {
-  const section = getSectionById(sectionId);
-  if (!section) return { items: [], total: 0 };
-  const data = loadSectionData(section.dataFile);
+  const { docs, error } = getSectionDocs(sectionId);
+  if (error) return { items: [], total: 0 };
   const items = [];
-  for (const [id, raw] of Object.entries(data)) {
-    if ((raw && raw.category) === categoryId) {
+  for (const doc of docs) {
+    if ((doc.category || '') === categoryId) {
       items.push({
-        id,
-        title: raw.title || '',
-        description: raw.description || '',
-        category: raw.category || '',
-        image: Array.isArray(raw.image) ? raw.image : [],
-        gost: raw.gost,
+        id: doc.code,
+        title: doc.title || '',
+        description: doc.description || '',
+        category: doc.category || '',
+        image: Array.isArray(doc.image) ? doc.image : [],
+        gost: doc.gost,
+        placement: doc.placement || '',
       });
     }
   }
@@ -110,9 +128,7 @@ function getCategoryPage(sectionId, categoryId, page) {
   const p = Math.max(0, Math.min(page, totalPages - 1));
   const start = p * ITEMS_PER_PAGE;
   const pageItems = items.slice(start, start + ITEMS_PER_PAGE);
-  return {
-    items: pageItems, page: p, totalPages, total,
-  };
+  return { items: pageItems, page: p, totalPages, total };
 }
 
 module.exports = {

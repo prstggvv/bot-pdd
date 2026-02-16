@@ -18,7 +18,7 @@ function handleMainMenuButton(bot, chatId, text) {
   if (!section) return false;
   clearState(chatId);
   setSectionContext(chatId, section.id);
-  const menuText = `Раздел: **${section.emoji} ${section.label}**\n\nВыберите способ поиска:`;
+  const menuText = `Раздел: **${section.emoji} ${section.label}**\n\nПоиск по номеру или названию, либо категории:`;
   bot.sendMessage(chatId, menuText, {
     parse_mode: 'Markdown',
     reply_markup: {
@@ -33,53 +33,49 @@ function handleUserInput(bot, chatId, text) {
   const state = getState(chatId);
   if (!state) return false;
   const { sectionId, action } = state;
+  if (action !== 'search') return false;
   const section = getSectionById(sectionId);
-
   if (!section) {
     clearState(chatId);
     return false;
   }
 
-  if (action === 'by_number') {
-    const result = getItemByNumber(sectionId, text);
-    if (result.found) {
-      bot.sendMessage(chatId, formatItem(result.item), {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          keyboard: getSectionMenuKeyboard(sectionId),
-          resize_keyboard: true,
-        },
-      });
-    } else {
-      bot.sendMessage(chatId, result.error || 'Ничего не найдено. Введите другой номер.');
-    }
+  const byNumber = getItemByNumber(sectionId, text);
+  if (byNumber.found) {
+    const item = byNumber.item;
+    bot.sendMessage(chatId, formatItem(item), {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        keyboard: getSectionMenuKeyboard(sectionId),
+        resize_keyboard: true,
+      },
+    }).then(() => {
+      if (Array.isArray(item.image)) {
+        for (const img of item.image) {
+          bot.sendPhoto(chatId, img).catch(() => { });
+        }
+      }
+    }).catch(() => { });
     return true;
   }
 
-  if (action === 'by_name') {
-    const result = searchByName(sectionId, text);
-    if (result.found) {
-      const message = formatSearchResults(result.items, section.label);
-      bot.sendMessage(chatId, message, {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: getSearchResultsInline(sectionId, result.items),
-        },
-      });
-    } else {
-      bot.sendMessage(chatId, result.error || 'Ничего не найдено. Введите другой запрос.');
-    }
+  const byName = searchByName(sectionId, text);
+  if (byName.found) {
+    const message = formatSearchResults(byName.items, section.label);
+    bot.sendMessage(chatId, message, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: getSearchResultsInline(sectionId, byName.items),
+      },
+    });
     return true;
   }
-  return false;
+
+  bot.sendMessage(chatId, byName.error || 'Ничего не найдено. Введите номер или ключевое слово.');
+  return true;
 }
 
-const SECTION_MENU_TEXTS = [
-  '🔢 По номеру',
-  '🔍 По названию',
-  '📂 Категории',
-  '◀️ Назад в меню',
-];
+const SECTION_MENU_TEXTS = ['🔍 Поиск', '📂 Категории', '◀️ Назад в меню'];
 
 function handleSectionMenuPress(bot, chatId, text, sectionId) {
   if (!sectionId) return false;
@@ -96,17 +92,10 @@ function handleSectionMenuPress(bot, chatId, text, sectionId) {
     return true;
   }
 
-  if (text === '🔢 По номеру') {
+  if (text === '🔍 Поиск') {
     clearState(chatId);
-    setState(chatId, sectionId, 'by_number');
-    bot.sendMessage(chatId, 'Введите номер (например: 1.1):');
-    return true;
-  }
-
-  if (text === '🔍 По названию') {
-    clearState(chatId);
-    setState(chatId, sectionId, 'by_name');
-    bot.sendMessage(chatId, 'Введите название или ключевое слово (например: переезд):');
+    setState(chatId, sectionId, 'search');
+    bot.sendMessage(chatId, 'Введите номер (например 1.1) или ключевое слово для поиска:');
     return true;
   }
 
